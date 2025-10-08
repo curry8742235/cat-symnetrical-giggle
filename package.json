@@ -1,7 +1,6 @@
 {
   "name": "gemini-roblox-proxy-vercel",
   "version": "1.0.0",
-  "type": "module",
   "dependencies": {
     "node-fetch": "^3.3.2",
     "cors": "^2.8.5"
