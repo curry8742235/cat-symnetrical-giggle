@@ -24,7 +24,8 @@ exports.handler = async function(event) {
     const body = JSON.parse(event.body);
     const userPrompt = body.prompt;
     
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
+    // THE CORRECTED MODEL NAME IS HERE
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`;
     const payload = { contents: [{ parts: [{ text: userPrompt }] }] };
 
     const apiResponse = await fetch(geminiUrl, {
@@ -35,7 +36,6 @@ exports.handler = async function(event) {
 
     const data = await apiResponse.json();
 
-    // THIS IS THE CRITICAL, ROBUST CHECK
     if (!data.candidates || data.candidates.length === 0) {
       let errorMessage = 'Gemini API returned no candidates.';
       if (data.promptFeedback && data.promptFeedback.blockReason) {
@@ -44,7 +44,7 @@ exports.handler = async function(event) {
         errorMessage = `Gemini API Error: ${data.error.message}`;
       }
       return {
-        statusCode: 400, // Bad Request
+        statusCode: 400,
         headers,
         body: JSON.stringify({ reply: errorMessage })
       };
