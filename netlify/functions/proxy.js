@@ -11,52 +11,38 @@ exports.handler = async function(event) {
     return { statusCode: 200, headers, body: 'CORS preflight OK' };
   }
 
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ reply: 'Method Not Allowed' }) };
-  }
-
   const geminiApiKey = process.env.GEMINI_API_KEY;
   if (!geminiApiKey) {
-    return { statusCode: 500, headers, body: JSON.stringify({ reply: 'API key is not configured on the server.' }) };
+    return { statusCode: 500, headers, body: JSON.stringify({ reply: 'API key is not configured.' }) };
   }
 
   try {
-    const body = JSON.parse(event.body);
-    const userPrompt = body.prompt;
-    
-    // THE CORRECTED MODEL NAME IS HERE
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`;
-    const payload = { contents: [{ parts: [{ text: userPrompt }] }] };
+    // THIS IS THE NEW PART: CALL ListModels INSTEAD OF generateContent
+    const listModelsUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`;
 
-    const apiResponse = await fetch(geminiUrl, {
-      method: 'POST',
+    const apiResponse = await fetch(listModelsUrl, {
+      method: 'GET',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
     });
 
     const data = await apiResponse.json();
 
-    if (!data.candidates || data.candidates.length === 0) {
-      let errorMessage = 'Gemini API returned no candidates.';
-      if (data.promptFeedback && data.promptFeedback.blockReason) {
-        errorMessage = `Request was blocked by Gemini's safety filters. Reason: ${data.promptFeedback.blockReason}`;
-      } else if (data.error) {
-        errorMessage = `Gemini API Error: ${data.error.message}`;
-      }
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ reply: errorMessage })
-      };
+    // Format the list of models to be readable in the chat
+    let modelList = "Available Models:\n";
+    if (data.models && data.models.length > 0) {
+      data.models.forEach(model => {
+        modelList += `- ${model.name}\n`;
+      });
+    } else {
+      modelList = "Could not retrieve any models. Response: " + JSON.stringify(data);
     }
-    
-    const replyText = data.candidates[0].content.parts[0].text;
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ reply: replyText })
+      body: JSON.stringify({ reply: modelList })
     };
+
   } catch (error) {
     return { statusCode: 500, headers, body: JSON.stringify({ reply: `Server Error: ${error.message}` }) };
   }
