@@ -1,8 +1,7 @@
 {
-  "name": "gemini-roblox-proxy-vercel",
+  "name": "gemini-roblox-proxy-netlify",
   "version": "1.0.0",
   "dependencies": {
-    "node-fetch": "^2.6.7",
-    "cors": "^2.8.5"
+    "node-fetch": "^2.6.7"
   }
 }
