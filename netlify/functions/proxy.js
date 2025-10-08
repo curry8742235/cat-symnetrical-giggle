@@ -1,30 +1,27 @@
-const fetch = require('node-fetch');
-
-exports.handler = async function(event) {
-  const headers = {
+export async function onRequest(context) {
+  const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS'
   };
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: 'CORS preflight OK' };
+  if (context.request.method === 'OPTIONS') {
+    return new Response('OK', { headers: corsHeaders });
   }
 
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: 'Method Not Allowed' };
+  if (context.request.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
   }
 
-  const geminiApiKey = process.env.GEMINI_API_KEY;
+  const geminiApiKey = context.env.GEMINI_API_KEY;
   if (!geminiApiKey) {
-    return { statusCode: 500, headers, body: 'API key is not configured.' };
+    return new Response(JSON.stringify({ reply: 'API key is not configured on the server.' }), { status: 500, headers: corsHeaders });
   }
 
   try {
-    const body = JSON.parse(event.body);
+    const body = await context.request.json();
     const userPrompt = body.prompt;
     
-    // THE CORRECTED MODEL NAME IS HERE
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
     const payload = { contents: [{ parts: [{ text: userPrompt }] }] };
 
@@ -43,22 +40,16 @@ exports.handler = async function(event) {
       } else if (data.error) {
         errorMessage = `Gemini API Error: ${data.error.message}`;
       }
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ reply: errorMessage }) // Still send JSON for errors
-      };
+      return new Response(JSON.stringify({ reply: errorMessage }), { status: 400, headers: corsHeaders });
     }
     
     const replyText = data.candidates[0].content.parts[0].text;
 
-    // SIMPLIFIED RESPONSE - ONLY SEND THE TEXT
-    return {
-      statusCode: 200,
-      headers,
-      body: replyText
-    };
+    return new Response(JSON.stringify({ reply: replyText }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    return { statusCode: 500, headers, body: `Server Error: ${error.message}` };
+    return new Response(JSON.stringify({ reply: `Server Error: ${error.message}` }), { status: 500, headers: corsHeaders });
   }
-};
+}
