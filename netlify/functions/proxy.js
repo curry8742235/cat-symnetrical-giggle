@@ -24,22 +24,14 @@ exports.handler = async function(event) {
     const body = JSON.parse(event.body);
     const userPrompt = body.prompt;
 
-    if (userPrompt.trim().toLowerCase() === 'list models') {
-      const listModelsUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`;
-      const listResponse = await fetch(listModelsUrl);
-      const listData = await listResponse.json();
-      
-      const modelNames = listData.models.map(model => `- ${model.name}`).join('\n');
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ reply: "Available Models:\n" + modelNames })
-      };
-    }
-
-    // THE NEW, QUOTA-FRIENDLY MODEL NAME IS HERE
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${geminiApiKey}`;
-    const payload = { contents: [{ parts: [{ text: userPrompt }] }] };
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`;
+    const payload = {
+      contents: [{ parts: [{ text: userPrompt }] }],
+      // Instruct the AI to use our special JSON format for code
+      "generationConfig": {
+        "responseMimeType": "application/json",
+      },
+    };
 
     const apiResponse = await fetch(geminiUrl, {
       method: 'POST',
@@ -63,12 +55,13 @@ exports.handler = async function(event) {
       };
     }
     
-    const replyText = data.candidates[0].content.parts[0].text;
-
+    // The AI will now respond with a JSON object. We just pass it through.
+    const jsonReply = data.candidates[0].content.parts[0].text;
+    
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ reply: replyText })
+      body: jsonReply // Pass the raw JSON string
     };
   } catch (error) {
     return { statusCode: 500, headers, body: JSON.stringify({ reply: `Server Error: ${error.message}` }) };
