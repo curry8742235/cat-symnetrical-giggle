@@ -1,26 +1,14 @@
-const fetch = require('node-fetch');
-const cors = require('cors');
+import fetch from 'node-fetch';
 
-const corsMiddleware = cors({
-  methods: ['POST', 'OPTIONS'],
-});
+export default async function handler(request, response) {
+  // Set CORS headers for all responses
+  response.setHeader('Access-Control-Allow-Origin', '*');
+  response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-function runMiddleware(req, res, fn) {
-  return new Promise((resolve, reject) => {
-    fn(req, res, (result) => {
-      if (result instanceof Error) {
-        return reject(result);
-      }
-      return resolve(result);
-    });
-  });
-}
-
-module.exports = async (request, response) => {
-  await runMiddleware(request, response, corsMiddleware);
-
+  // Handle CORS preflight request
   if (request.method === 'OPTIONS') {
-    return response.status(200).json({ message: 'CORS preflight OK' });
+    return response.status(200).send('OK');
   }
 
   if (request.method !== 'POST') {
@@ -59,4 +47,4 @@ module.exports = async (request, response) => {
   } catch (error) {
     return response.status(500).json({ reply: `Server Error: ${error.message}` });
   }
-};
+}
