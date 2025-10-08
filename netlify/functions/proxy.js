@@ -17,14 +17,14 @@ exports.handler = async function(event) {
 
   const geminiApiKey = process.env.GEMINI_API_KEY;
   if (!geminiApiKey) {
-    return { statusCode: 500, headers, body: JSON.stringify({ reply: 'API key is not configured on the server.' }) };
+    return { statusCode: 500, headers, body: 'API key is not configured.' };
   }
 
   try {
     const body = JSON.parse(event.body);
     const userPrompt = body.prompt;
     
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}\`;``;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
     const payload = { contents: [{ parts: [{ text: userPrompt }] }] };
 
     const apiResponse = await fetch(geminiUrl, {
@@ -34,22 +34,6 @@ exports.handler = async function(event) {
     });
 
     const data = await apiResponse.json();
-
-    // THIS IS THE NEW, ROBUST CHECK
-    if (!data.candidates || data.candidates.length === 0) {
-      let errorMessage = 'Gemini API returned no candidates.';
-      if (data.promptFeedback && data.promptFeedback.blockReason) {
-        errorMessage = `Request was blocked by Gemini's safety filters. Reason: ${data.promptFeedback.blockReason}`;
-      } else if (data.error) {
-        errorMessage = `Gemini API Error: ${data.error.message}`;
-      }
-      return {
-        statusCode: 400, // Bad Request
-        headers,
-        body: JSON.stringify({ reply: errorMessage })
-      };
-    }
-    
     const replyText = data.candidates[0].content.parts[0].text;
 
     return {
@@ -58,6 +42,6 @@ exports.handler = async function(event) {
       body: JSON.stringify({ reply: replyText })
     };
   } catch (error) {
-    return { statusCode: 500, headers, body: JSON.stringify({ reply: `Server Error: ${error.message}` }) };
+    return { statusCode: 500, headers, body: `Server Error: ${error.message}` };
   }
 };
