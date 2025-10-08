@@ -37,8 +37,8 @@ exports.handler = async function(event) {
       };
     }
 
-    // THE CORRECTED MODEL NAME IS HERE
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiApiKey}`;
+    // THE NEW MODEL NAME IS HERE
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${geminiApiKey}`;
     const payload = { contents: [{ parts: [{ text: userPrompt }] }] };
 
     const apiResponse = await fetch(geminiUrl, {
