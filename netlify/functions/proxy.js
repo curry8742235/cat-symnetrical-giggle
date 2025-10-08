@@ -24,13 +24,12 @@ exports.handler = async function(event) {
     const body = JSON.parse(event.body);
     const userPrompt = body.prompt;
 
-    // SPECIAL COMMAND TO LIST MODELS
     if (userPrompt.trim().toLowerCase() === 'list models') {
       const listModelsUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`;
       const listResponse = await fetch(listModelsUrl);
       const listData = await listResponse.json();
       
-      const modelNames = listData.models.map(model => model.name).join('\n');
+      const modelNames = listData.models.map(model => `- ${model.name}`).join('\n');
       return {
         statusCode: 200,
         headers,
@@ -38,8 +37,8 @@ exports.handler = async function(event) {
       };
     }
 
-    // NORMAL CHAT COMPLETION
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
+    // THE CORRECTED MODEL NAME IS HERE
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiApiKey}`;
     const payload = { contents: [{ parts: [{ text: userPrompt }] }] };
 
     const apiResponse = await fetch(geminiUrl, {
