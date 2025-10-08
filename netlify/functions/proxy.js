@@ -12,33 +12,20 @@ exports.handler = async function(event) {
   }
 
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ reply: 'Method Not Allowed' }) };
+    return { statusCode: 405, headers, body: 'Method Not Allowed' };
   }
 
   const geminiApiKey = process.env.GEMINI_API_KEY;
   if (!geminiApiKey) {
-    return { statusCode: 500, headers, body: JSON.stringify({ reply: 'API key is not configured on the server.' }) };
+    return { statusCode: 500, headers, body: 'API key is not configured.' };
   }
 
   try {
     const body = JSON.parse(event.body);
     const userPrompt = body.prompt;
-
-    if (userPrompt.trim().toLowerCase() === 'list models') {
-      const listModelsUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`;
-      const listResponse = await fetch(listModelsUrl);
-      const listData = await listResponse.json();
-      
-      const modelNames = listData.models.map(model => `- ${model.name}`).join('\n');
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ reply: "Available Models:\n" + modelNames })
-      };
-    }
-
-    // THE NEW, QUOTA-FRIENDLY MODEL NAME IS HERE
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${geminiApiKey}`;
+    
+    // THE CORRECTED MODEL NAME IS HERE
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
     const payload = { contents: [{ parts: [{ text: userPrompt }] }] };
 
     const apiResponse = await fetch(geminiUrl, {
@@ -59,18 +46,19 @@ exports.handler = async function(event) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ reply: errorMessage })
+        body: JSON.stringify({ reply: errorMessage }) // Still send JSON for errors
       };
     }
     
     const replyText = data.candidates[0].content.parts[0].text;
 
+    // SIMPLIFIED RESPONSE - ONLY SEND THE TEXT
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ reply: replyText })
+      body: replyText
     };
   } catch (error) {
-    return { statusCode: 500, headers, body: JSON.stringify({ reply: `Server Error: ${error.message}` }) };
+    return { statusCode: 500, headers, body: `Server Error: ${error.message}` };
   }
 };
